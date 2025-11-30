@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { SavedLocation } from '../types';
-import { MapPin, Calendar, ExternalLink, Trash2, Navigation, Tag, Check, X } from 'lucide-react';
+import { Calendar, ExternalLink, Trash2, Navigation, Tag, Check, X } from 'lucide-react';
 
 interface LocationCardProps {
   location: SavedLocation;
@@ -33,33 +33,42 @@ export const LocationCard: React.FC<LocationCardProps> = ({ location, onDelete, 
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300 flex flex-col">
-      <div className="p-4 flex flex-col gap-3">
+      <div className="p-3 flex flex-col gap-2">
         
-        {/* Header: Data e Cestino */}
-        <div className="flex justify-between items-center border-b border-gray-100 pb-2">
+        {/* Header: Data e Azioni (Naviga + Cestino) */}
+        <div className="flex justify-between items-center">
             <div className="flex items-center text-xs text-gray-500 font-medium">
                 <Calendar className="w-3.5 h-3.5 mr-1.5 text-blue-500" />
                 {date}
             </div>
-            {onDelete && (
-                <button 
-                    onClick={() => onDelete(location.id)}
-                    className="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-md hover:bg-red-50"
-                    title="Elimina posizione"
+            
+            <div className="flex items-center gap-1">
+                {/* Pulsante Naviga (Icona) */}
+                <a 
+                    href={googleMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-400 hover:text-blue-600 transition-colors p-1.5 rounded-md hover:bg-blue-50"
+                    title="Naviga su Maps"
                 >
-                    <Trash2 className="w-4 h-4" />
-                </button>
-            )}
-        </div>
+                    <Navigation className="w-4 h-4" />
+                </a>
 
-        {/* Coordinate */}
-        <div className="flex items-center text-sm text-gray-800 font-medium py-1">
-            <MapPin className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
-            <span className="truncate">{location.coords.latitude.toFixed(6)}, {location.coords.longitude.toFixed(6)}</span>
+                {/* Pulsante Elimina */}
+                {onDelete && (
+                    <button 
+                        onClick={() => onDelete(location.id)}
+                        className="text-gray-400 hover:text-red-500 transition-colors p-1.5 rounded-md hover:bg-red-50"
+                        title="Elimina posizione"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </button>
+                )}
+            </div>
         </div>
 
         {/* Tag Section */}
-        <div className="flex items-center min-h-[28px]">
+        <div className="flex items-center min-h-[26px]">
             {isEditingTag ? (
                 <div className="flex items-center gap-1 w-full animate-fade-in">
                     <input 
@@ -77,32 +86,21 @@ export const LocationCard: React.FC<LocationCardProps> = ({ location, onDelete, 
             ) : (
                 <button 
                     onClick={() => setIsEditingTag(true)}
-                    className={`flex items-center text-xs px-2 py-1 rounded-md transition-colors border
+                    className={`flex items-center text-xs px-2 py-1 rounded-md transition-colors border w-full
                         ${location.tag 
                             ? 'bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100' 
-                            : 'bg-gray-50 text-gray-400 border-transparent hover:bg-gray-100 hover:text-gray-600'
+                            : 'bg-gray-50 text-gray-400 border-dashed border-gray-300 hover:bg-gray-100 hover:text-gray-600'
                         }`}
                 >
                     <Tag className={`w-3 h-3 mr-1.5 ${location.tag ? 'text-blue-500' : 'text-gray-400'}`} />
-                    {location.tag || "Aggiungi tag"}
+                    <span className="truncate text-left flex-1">{location.tag || "Aggiungi tag..."}</span>
                 </button>
             )}
         </div>
 
-        {/* Pulsante Naviga */}
-        <a 
-            href={googleMapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-1 flex items-center justify-center w-full px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-wide rounded-md transition-colors shadow-sm group"
-        >
-            <Navigation className="w-3.5 h-3.5 mr-2 group-hover:translate-x-0.5 transition-transform" />
-            Naviga
-        </a>
-
         {/* Legacy Grounding Chunks (Solo se presenti da vecchi salvataggi, molto compatti) */}
         {location.groundingChunks && location.groundingChunks.length > 0 && (
-            <div className="mt-2 pt-2 border-t border-gray-100 flex flex-col gap-1.5">
+            <div className="pt-1 border-t border-gray-100 flex flex-col gap-1">
                 {location.groundingChunks.map((chunk, index) => (
                     chunk.maps ? (
                         <a
@@ -110,9 +108,9 @@ export const LocationCard: React.FC<LocationCardProps> = ({ location, onDelete, 
                             href={chunk.maps.uri}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center text-xs text-gray-600 hover:text-blue-600 truncate"
+                            className="flex items-center text-[10px] text-gray-500 hover:text-blue-600 truncate"
                         >
-                            <ExternalLink className="w-3 h-3 mr-1.5 flex-shrink-0" />
+                            <ExternalLink className="w-2.5 h-2.5 mr-1 flex-shrink-0" />
                             <span className="truncate">{chunk.maps.title}</span>
                         </a>
                     ) : null
