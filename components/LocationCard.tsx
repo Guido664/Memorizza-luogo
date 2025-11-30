@@ -9,10 +9,11 @@ interface LocationCardProps {
 
 export const LocationCard: React.FC<LocationCardProps> = ({ location, onDelete }) => {
   const date = new Date(location.timestamp).toLocaleString('it-IT');
+  const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${location.coords.latitude},${location.coords.longitude}`;
 
   return (
-    <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow duration-300">
-      <div className="p-5">
+    <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col h-full">
+      <div className="p-5 flex-1 flex flex-col">
         <div className="flex justify-between items-start mb-3">
           <div className="flex items-center text-blue-600 font-semibold">
             <MapPin className="w-5 h-5 mr-2" />
@@ -29,7 +30,7 @@ export const LocationCard: React.FC<LocationCardProps> = ({ location, onDelete }
           )}
         </div>
 
-        <div className="mb-4">
+        <div className="mb-4 flex-1">
             {location.description ? (
                 <>
                     <h3 className="text-gray-800 font-medium text-lg leading-tight mb-2">Note</h3>
@@ -44,15 +45,25 @@ export const LocationCard: React.FC<LocationCardProps> = ({ location, onDelete }
             )}
         </div>
 
-        <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-gray-100">
+        <div className="flex flex-col gap-2 mt-auto pt-4 border-t border-gray-100">
              <div className="flex items-center text-xs text-gray-500">
                 <Calendar className="w-3.5 h-3.5 mr-1.5" />
                 {date}
             </div>
             <div className="flex items-center text-xs text-gray-500">
-                <Navigation className="w-3.5 h-3.5 mr-1.5" />
+                <MapPin className="w-3.5 h-3.5 mr-1.5" />
                 {location.coords.latitude.toFixed(6)}, {location.coords.longitude.toFixed(6)}
             </div>
+            
+            <a 
+              href={googleMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 flex items-center justify-center w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm group"
+            >
+              <Navigation className="w-4 h-4 mr-2 group-hover:translate-x-0.5 transition-transform" />
+              Naviga
+            </a>
         </div>
       </div>
 
