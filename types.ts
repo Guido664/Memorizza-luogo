@@ -26,6 +26,7 @@ export interface SavedLocation {
   coords: GeoCoordinates;
   description?: string;
   groundingChunks?: GroundingChunk[];
+  tag?: string;
 }
 
 export interface GeminiLocationResponse {

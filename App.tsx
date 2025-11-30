@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { MapPin, Loader2, Map as MapIcon, History, AlertTriangle, Navigation, Trash2, X } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { MapPin, Loader2, Map as MapIcon, History, AlertTriangle, Navigation, Trash2, X, Tag } from 'lucide-react';
 import { GeoCoordinates, SavedLocation } from './types';
 import { LocationCard } from './components/LocationCard';
 import { MapViewer } from './components/MapViewer';
@@ -18,6 +18,7 @@ function App() {
   const [manualLat, setManualLat] = useState('');
   const [manualLng, setManualLng] = useState('');
   const [showMap, setShowMap] = useState(false);
+  const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
 
   // Load and sanitize history
   useEffect(() => {
@@ -58,6 +59,17 @@ function App() {
       const updated = currentHistory.filter(item => item.id !== id);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       return updated;
+    });
+  }, []);
+
+  const updateLocationTag = useCallback((id: string, newTag: string) => {
+    setHistory(prev => {
+        const currentHistory = Array.isArray(prev) ? prev : [];
+        const updated = currentHistory.map(item => 
+            item.id === id ? { ...item, tag: newTag } : item
+        );
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        return updated;
     });
   }, []);
 
@@ -155,6 +167,23 @@ function App() {
 
     processLocation({ latitude: lat, longitude: lng });
   };
+
+  // Extract unique tags
+  const uniqueTags = useMemo(() => {
+    const tags = new Set<string>();
+    history.forEach(loc => {
+        if (loc.tag && loc.tag.trim() !== '') {
+            tags.add(loc.tag.trim());
+        }
+    });
+    return Array.from(tags).sort();
+  }, [history]);
+
+  // Filter history based on active tag
+  const filteredHistory = useMemo(() => {
+    if (!activeTagFilter) return history;
+    return history.filter(loc => loc.tag === activeTagFilter);
+  }, [history, activeTagFilter]);
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 pb-20 font-sans">
@@ -284,27 +313,72 @@ function App() {
 
         {/* History List */}
         <section>
-            <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-                <History className="w-5 h-5 text-gray-400" />
-                <h2 className="text-lg font-bold text-gray-800">Cronologia Posizioni</h2>
-                <span className="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full">{history.length}</span>
-            </div>
-            {history.length > 0 && (
-                <button onClick={clearHistory} className="text-xs text-red-400 hover:text-red-600 flex items-center transition-colors">
-                    <Trash2 className="w-3 h-3 mr-1"/> Svuota
-                </button>
-            )}
+            <div className="flex flex-col gap-4 mb-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <History className="w-5 h-5 text-gray-400" />
+                        <h2 className="text-lg font-bold text-gray-800">Cronologia Posizioni</h2>
+                        <span className="bg-gray-200 text-gray-600 text-xs px-2 py-0.5 rounded-full">{filteredHistory.length}</span>
+                    </div>
+                    {history.length > 0 && (
+                        <button onClick={clearHistory} className="text-xs text-red-400 hover:text-red-600 flex items-center transition-colors">
+                            <Trash2 className="w-3 h-3 mr-1"/> Svuota
+                        </button>
+                    )}
+                </div>
+
+                {/* Tags Filter */}
+                {uniqueTags.length > 0 && (
+                    <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                         <button
+                            onClick={() => setActiveTagFilter(null)}
+                            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border whitespace-nowrap
+                                ${activeTagFilter === null 
+                                    ? 'bg-blue-600 text-white border-blue-600' 
+                                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                        >
+                            Tutti
+                        </button>
+                        {uniqueTags.map(tag => (
+                            <button
+                                key={tag}
+                                onClick={() => setActiveTagFilter(tag)}
+                                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors border whitespace-nowrap flex items-center gap-1
+                                    ${activeTagFilter === tag 
+                                        ? 'bg-blue-600 text-white border-blue-600' 
+                                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                            >
+                                <Tag className="w-3 h-3" />
+                                {tag}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
 
-            {history.length === 0 ? (
+            {filteredHistory.length === 0 ? (
             <div className="text-center py-10 bg-white rounded-xl border border-dashed border-gray-300">
-                <p className="text-gray-400 text-sm">Nessun luogo salvato.</p>
+                <p className="text-gray-400 text-sm">
+                    {activeTagFilter ? `Nessuna posizione trovata con il tag "${activeTagFilter}"` : "Nessun luogo salvato."}
+                </p>
+                {activeTagFilter && (
+                    <button 
+                        onClick={() => setActiveTagFilter(null)} 
+                        className="text-blue-500 text-xs mt-2 underline"
+                    >
+                        Mostra tutti
+                    </button>
+                )}
             </div>
             ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {history.map(loc => (
-                    <LocationCard key={loc.id} location={loc} onDelete={deleteFromHistory} />
+                {filteredHistory.map(loc => (
+                    <LocationCard 
+                        key={loc.id} 
+                        location={loc} 
+                        onDelete={deleteFromHistory}
+                        onUpdateTag={updateLocationTag}
+                    />
                 ))}
             </div>
             )}
