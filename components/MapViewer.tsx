@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { SavedLocation } from '../types';
 
-// Declare L global from the script tag in index.html
 declare const L: any;
 
 interface MapViewerProps {
@@ -34,16 +33,22 @@ export const MapViewer: React.FC<MapViewerProps> = ({ savedLocations }) => {
     if (!isLeafletReady || !mapRef.current) return;
     if (mapInstanceRef.current) return;
 
-    // Safety check for empty or invalid history
-    const hasHistory = Array.isArray(savedLocations) && savedLocations.length > 0;
+    // Filter valid locations for initial center
+    const validLocations = savedLocations.filter(l => 
+        l.coords && 
+        !isNaN(Number(l.coords.latitude)) && 
+        !isNaN(Number(l.coords.longitude))
+    );
+
+    const hasHistory = validLocations.length > 0;
     
     // Default center (Rome) or first saved location
     let defaultCenter = [41.9028, 12.4964]; // Rome
     if (hasHistory) {
-        defaultCenter = [savedLocations[0].coords.latitude, savedLocations[0].coords.longitude];
+        defaultCenter = [validLocations[0].coords.latitude, validLocations[0].coords.longitude];
     }
 
-    const defaultZoom = hasHistory ? 15 : 12;
+    const defaultZoom = hasHistory ? 15 : 6;
 
     try {
         mapInstanceRef.current = L.map(mapRef.current).setView(defaultCenter, defaultZoom);
@@ -56,30 +61,32 @@ export const MapViewer: React.FC<MapViewerProps> = ({ savedLocations }) => {
         markersLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current);
         
         // Fix for grey tiles when map container is resized or hidden initially
+        // This is crucial when opening in a modal
         setTimeout(() => {
             mapInstanceRef.current?.invalidateSize();
-        }, 100);
+        }, 200);
 
     } catch (e) {
         console.error("Error initializing map", e);
     }
 
-    // Cleanup on unmount
     return () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
       }
     };
-  }, [isLeafletReady]); 
+  }, [isLeafletReady]); // Only run once when leaflet is ready
 
-  // Update Markers and Center
+  // Update Markers and Center when savedLocations changes
   useEffect(() => {
-    if (!mapInstanceRef.current || !markersLayerRef.current || !Array.isArray(savedLocations)) return;
+    if (!mapInstanceRef.current || !markersLayerRef.current) return;
+
+    // Always invalidate size when data changes (implies visibility might have changed)
+    mapInstanceRef.current.invalidateSize();
 
     markersLayerRef.current.clearLayers();
 
-    // Define Icons with fallback
     const blueIcon = L.icon({
       iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
       shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -98,12 +105,17 @@ export const MapViewer: React.FC<MapViewerProps> = ({ savedLocations }) => {
         shadowSize: [41, 41]
       });
 
-    // Add History Markers
-    // Index 0 is the latest one (Red), others are Blue
-    savedLocations.forEach((loc, index) => {
+    // Filter valid locations specifically to prevent NaN errors
+    const validLocations = savedLocations.filter(l => 
+        l.coords && 
+        typeof l.coords.latitude === 'number' && !isNaN(l.coords.latitude) &&
+        typeof l.coords.longitude === 'number' && !isNaN(l.coords.longitude)
+    );
+
+    validLocations.forEach((loc, index) => {
       const isLatest = index === 0;
       const markerIcon = isLatest ? redIcon : blueIcon;
-      const zIndex = isLatest ? 1000 : 0; // Bring latest to front
+      const zIndex = isLatest ? 1000 : 0;
 
       const marker = L.marker([loc.coords.latitude, loc.coords.longitude], { 
           icon: markerIcon,
@@ -111,20 +123,19 @@ export const MapViewer: React.FC<MapViewerProps> = ({ savedLocations }) => {
       })
         .bindPopup(`
           <div style="font-family: sans-serif;">
-            <strong style="color: ${isLatest ? '#DC2626' : '#2563EB'};">${isLatest ? 'Ultima Posizione' : new Date(loc.timestamp).toLocaleDateString()}</strong>
-            <p style="margin: 4px 0 0; font-size: 0.9em;">${loc.description.substring(0, 60)}...</p>
+            <strong style="color: ${isLatest ? '#DC2626' : '#2563EB'};">${isLatest ? 'Ultima Posizione' : 'Posizione Salvata'}</strong>
+            <br/>
+            <span style="font-size: 0.85em; color: #555;">${new Date(loc.timestamp).toLocaleString()}</span>
+            <br/>
+            <span style="font-size: 0.8em; color: #777;">Lat: ${loc.coords.latitude.toFixed(5)}, Lon: ${loc.coords.longitude.toFixed(5)}</span>
           </div>
         `);
       markersLayerRef.current.addLayer(marker);
     });
 
-    // Fly to latest location if available
-    if (savedLocations.length > 0) {
-        const latest = savedLocations[0];
-        mapInstanceRef.current.flyTo([latest.coords.latitude, latest.coords.longitude], 16, {
-            animate: true,
-            duration: 1.5
-        });
+    if (validLocations.length > 0) {
+        const latest = validLocations[0];
+        mapInstanceRef.current.setView([latest.coords.latitude, latest.coords.longitude], 16);
     }
 
   }, [savedLocations, isLeafletReady]);
@@ -132,10 +143,10 @@ export const MapViewer: React.FC<MapViewerProps> = ({ savedLocations }) => {
   if (!isLeafletReady) {
       return (
           <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
-              Caricamento mappa...
+              Inizializzazione mappa...
           </div>
       )
   }
 
-  return <div ref={mapRef} className="w-full h-full bg-gray-50" />;
+  return <div ref={mapRef} className="w-full h-full bg-gray-50 z-10" />;
 };

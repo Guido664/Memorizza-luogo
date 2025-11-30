@@ -1,6 +1,6 @@
 import React from 'react';
 import { SavedLocation } from '../types';
-import { MapPin, Navigation, Calendar, ExternalLink, Trash2 } from 'lucide-react';
+import { MapPin, Calendar, ExternalLink, Trash2, Navigation } from 'lucide-react';
 
 interface LocationCardProps {
   location: SavedLocation;
@@ -10,9 +10,6 @@ interface LocationCardProps {
 export const LocationCard: React.FC<LocationCardProps> = ({ location, onDelete }) => {
   const date = new Date(location.timestamp).toLocaleString('it-IT');
 
-  // Parse markdown for basic formatting if needed, but for now we just display text
-  // We will try to make links clickable if they appear in text, but primarily we rely on chunks.
-  
   return (
     <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow duration-300">
       <div className="p-5">
@@ -33,10 +30,18 @@ export const LocationCard: React.FC<LocationCardProps> = ({ location, onDelete }
         </div>
 
         <div className="mb-4">
-            <h3 className="text-gray-800 font-medium text-lg leading-tight mb-2">Analisi di Gemini</h3>
-            <div className="text-gray-600 text-sm whitespace-pre-wrap leading-relaxed">
-              {location.description}
-            </div>
+            {location.description ? (
+                <>
+                    <h3 className="text-gray-800 font-medium text-lg leading-tight mb-2">Note</h3>
+                    <div className="text-gray-600 text-sm whitespace-pre-wrap leading-relaxed">
+                    {location.description}
+                    </div>
+                </>
+            ) : (
+                <div className="text-gray-500 text-sm italic">
+                    Nessuna descrizione aggiuntiva.
+                </div>
+            )}
         </div>
 
         <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-gray-100">
@@ -46,7 +51,7 @@ export const LocationCard: React.FC<LocationCardProps> = ({ location, onDelete }
             </div>
             <div className="flex items-center text-xs text-gray-500">
                 <Navigation className="w-3.5 h-3.5 mr-1.5" />
-                {location.coords.latitude.toFixed(5)}, {location.coords.longitude.toFixed(5)}
+                {location.coords.latitude.toFixed(6)}, {location.coords.longitude.toFixed(6)}
             </div>
         </div>
       </div>
@@ -76,26 +81,6 @@ export const LocationCard: React.FC<LocationCardProps> = ({ location, onDelete }
                       </p>
                     </div>
                     <ExternalLink className="w-4 h-4 text-gray-400 group-hover:text-blue-500" />
-                  </a>
-                );
-              }
-              if (chunk.web) {
-                 return (
-                  <a
-                    key={index}
-                    href={chunk.web.uri}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center p-2 bg-white rounded border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors group"
-                  >
-                    <div className="bg-blue-100 text-blue-600 p-1.5 rounded mr-3">
-                        <ExternalLink className="w-4 h-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800 truncate group-hover:text-blue-700">
-                        {chunk.web.title || "Risultato Web"}
-                      </p>
-                    </div>
                   </a>
                 );
               }
