@@ -24,8 +24,8 @@ export interface SavedLocation {
   id: string;
   timestamp: number;
   coords: GeoCoordinates;
-  description?: string;
-  groundingChunks?: GroundingChunk[];
+  description: string;
+  groundingChunks: GroundingChunk[];
 }
 
 export interface GeminiLocationResponse {
