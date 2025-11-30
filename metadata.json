@@ -1,0 +1,7 @@
+{
+  "name": "GeoMemory - Map Grounding",
+  "description": "Memorizza e identifica la tua posizione attuale usando Google Maps Grounding via Gemini.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
