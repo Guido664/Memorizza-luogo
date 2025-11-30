@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { SavedLocation } from '../types';
-import { Calendar, ExternalLink, Trash2, Navigation, Tag, Check, X } from 'lucide-react';
+import { Calendar, ExternalLink, Trash2, Navigation, Tag, Check, X, Share2 } from 'lucide-react';
 
 interface LocationCardProps {
   location: SavedLocation;
@@ -31,11 +31,28 @@ export const LocationCard: React.FC<LocationCardProps> = ({ location, onDelete, 
     }
   };
 
+  const handleShare = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'Posizione GeoMemory',
+          text: `Posizione salvata il ${date}${location.tag ? ` (${location.tag})` : ''}`,
+          url: googleMapsUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(googleMapsUrl);
+        alert('Link copiato negli appunti!');
+      }
+    } catch (error) {
+      console.error('Error sharing:', error);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-300 flex flex-col">
       <div className="p-3 flex flex-col gap-2">
         
-        {/* Header: Data e Azioni (Naviga + Cestino) */}
+        {/* Header: Data e Azioni (Naviga + Condividi + Cestino) */}
         <div className="flex justify-between items-center">
             <div className="flex items-center text-xs text-gray-500 font-medium">
                 <Calendar className="w-3.5 h-3.5 mr-1.5 text-blue-500" />
@@ -53,6 +70,15 @@ export const LocationCard: React.FC<LocationCardProps> = ({ location, onDelete, 
                 >
                     <Navigation className="w-4 h-4" />
                 </a>
+
+                {/* Pulsante Condividi */}
+                <button
+                    onClick={handleShare}
+                    className="text-gray-400 hover:text-green-600 transition-colors p-1.5 rounded-md hover:bg-green-50"
+                    title="Condividi posizione"
+                >
+                    <Share2 className="w-4 h-4" />
+                </button>
 
                 {/* Pulsante Elimina */}
                 {onDelete && (
