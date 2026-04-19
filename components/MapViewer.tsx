@@ -5,13 +5,19 @@ declare const L: any;
 
 interface MapViewerProps {
   savedLocations: SavedLocation[];
+  onMapClick?: (coords: {latitude: number, longitude: number}) => void;
 }
 
-export const MapViewer: React.FC<MapViewerProps> = ({ savedLocations }) => {
+export const MapViewer: React.FC<MapViewerProps> = ({ savedLocations, onMapClick }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersLayerRef = useRef<any>(null);
   const [isLeafletReady, setIsLeafletReady] = useState(false);
+  const onMapClickRef = useRef(onMapClick);
+
+  useEffect(() => {
+    onMapClickRef.current = onMapClick;
+  }, [onMapClick]);
 
   // Check for Leaflet availability
   useEffect(() => {
@@ -59,6 +65,12 @@ export const MapViewer: React.FC<MapViewerProps> = ({ savedLocations }) => {
         }).addTo(mapInstanceRef.current);
 
         markersLayerRef.current = L.layerGroup().addTo(mapInstanceRef.current);
+
+        mapInstanceRef.current.on('click', (e: any) => {
+            if (onMapClickRef.current) {
+                onMapClickRef.current({ latitude: e.latlng.lat, longitude: e.latlng.lng });
+            }
+        });
         
         // Fix for grey tiles when map container is resized or hidden initially
         // This is crucial when opening in a modal

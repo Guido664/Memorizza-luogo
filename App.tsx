@@ -401,7 +401,14 @@ function App() {
                         </button>
                     </div>
                     <div className="flex-1 relative bg-gray-100">
-                        <MapViewer savedLocations={history} />
+                        <MapViewer 
+                            savedLocations={filteredHistory} 
+                            onMapClick={(coords) => {
+                                if (window.confirm("Vuoi memorizzare questa posizione?")) {
+                                    processLocation(coords);
+                                }
+                            }}
+                        />
                     </div>
                 </div>
             </div>
